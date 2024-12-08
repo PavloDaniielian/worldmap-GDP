@@ -1,0 +1,90 @@
+<head>
+    <style> body { margin: 0; } </style>
+
+    <script src="//unpkg.com/globe.gl"></script>
+    <!--<script src="../../dist/globe.gl.js"></script>-->
+</head>
+
+<body>
+<div id="globeViz"></div>
+
+<script>
+    const fetchData = async () => {
+        try {
+            // Fetch country data
+            const countryResponse = await fetch("https://restcountries.com/v3.1/all");
+            const countries = await countryResponse.json();
+
+            let cur = new Date();
+
+            // Fetch GDP per capita data
+            let n = 0, page = 1;
+            let gdpRecords = [];
+            do{
+                try{
+                    const gdpResponse = await fetch(
+                        "https://api.worldbank.org/v2/country/all/indicator/NY.GDP.PCAP.CD?format=json&date=" + (cur.getFullYear()-1) + "&page=" + page
+                    );
+                    const gdpData = ( await gdpResponse.json() )[1];
+                    gdpRecords = gdpRecords.concat(gdpData);
+                    n = gdpData.length;
+                    page ++;
+                }catch (error){
+                    n = 0;
+                }
+            }while( n > 0 );
+
+            console.log("gdpRecords", gdpRecords);
+
+            // Combine the data
+            const combinedData = countries.map((country) => {
+                const isoAlpha3 = country.cca3; // Get the ISO Alpha-3 code
+                const gdpEntry = gdpRecords.find((entry) => entry.countryiso3code === isoAlpha3);
+
+                return {
+                    name: country.name.common,
+                    capital: country.capital ? country.capital[0] : "N/A",
+                    latitude: country.latlng ? country.latlng[0] : "N/A",
+                    longitude: country.latlng ? country.latlng[1] : "N/A",
+                    population: country.population? country.population : "N/A",
+                    gdpPerCapita: gdpEntry ? Math.round(gdpEntry.value) : "N/A",
+                };
+            });
+
+            return combinedData;
+            // const testResponse = await fetch("https://restcountries.com/v3.1/all");
+            // const coes = await testResponse.json();
+            // console.log( "reswaefwefault + OK\n" + coes )
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            return null;
+        }
+    };
+
+    const initializeGlobe = async () => {
+        const worldData = await fetchData(); // Resolve the promise
+        if (worldData === null) {
+            alert("Error fetching data!");
+            return;
+        }
+
+        console.log("Resolved worldData:", worldData);
+
+        new Globe(document.getElementById('globeViz'))
+            .globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg')
+            .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
+            .labelsData(worldData)
+            .labelLat(d => d.latitude)
+            .labelLng(d => d.longitude)
+            .labelText(d => d.name)
+            //.labelSize(d => d.gdpPerCapita && d.gdpPerCapita !== "N/A" ? Math.sqrt(d.gdpPerCapita) * 4e-3 : 0.5)
+            .labelDotRadius(d => 0.5)
+            .labelColor( d => d.gdpPerCapita && d.gdpPerCapita !== "N/A" ? `rgba(255,255,${Math.round((100000-d.gdpPerCapita)/100000*255)},0.5)` : 'rgba(255, 255, 255, 0.5)' )
+            .labelLabel( d => `name: ${d.name}(${d.capital})<BR>lat-lon: ${d.latitude}, ${d.longitude}<BR>population: ${d.population}<BR>gdpPerCapita: ${d.gdpPerCapita}` )
+            .labelResolution(2);
+    };
+
+    // Initialize the globe after fetching data
+    initializeGlobe();
+</script>
+</body>
