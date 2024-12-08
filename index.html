@@ -12,8 +12,10 @@
     const fetchData = async () => {
         try {
             // Fetch country data
-            const countryResponse = await fetch("https://restcountries.com/v3.1/all");
+            const countryResponse = await fetch("assets/datas/country.json");
+            //const countryResponse = await fetch("https://restcountries.com/v3.1/all");
             const countries = await countryResponse.json();
+            console.log("AFWE", countries)
 
             let cur = new Date();
 
