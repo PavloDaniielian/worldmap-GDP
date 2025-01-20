@@ -25,7 +25,7 @@
             do{
                 try{
                     const gdpResponse = await fetch(
-                        "https://api.worldbank.org/v2/country/all/indicator/NY.GDP.PCAP.CD?format=json&date=" + (cur.getFullYear()-1) + "&page=" + page
+                        "https://api.worldbank.org/v2/country/all/indicator/NY.GDP.PCAP.CD?format=json&date=" + 2023 + "&page=" + page
                     );
                     const gdpData = ( await gdpResponse.json() )[1];
                     gdpRecords = gdpRecords.concat(gdpData);
@@ -41,7 +41,7 @@
             // Combine the data
             const combinedData = countries.map((country) => {
                 const isoAlpha3 = country.cca3; // Get the ISO Alpha-3 code
-                const gdpEntry = gdpRecords.find((entry) => entry.countryiso3code === isoAlpha3);
+                const gdpEntry = gdpRecords.find((entry) => entry && entry.countryiso3code && entry.countryiso3code === isoAlpha3);
 
                 return {
                     name: country.name.common,
